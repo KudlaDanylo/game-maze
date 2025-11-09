@@ -4,13 +4,13 @@ from constants import *
 class Player(pygame.sprite.Sprite):
     def __init__(self, game, x, y):
         self.groups = game.all_sprites
-        super().__init__()
-        self.layer = PLAYER_LAYER
+        super().__init__(self.groups)
+
         self.game = game
         self.image = pygame.Surface((TILE_SIZE, TILE_SIZE), pygame.SRCALPHA)
         pygame.draw.circle(self.image, PLAYER_COLOR, (TILE_SIZE // 2, TILE_SIZE //2), TILE_SIZE // 4)
         self.rect = self.image.get_rect()
-        self.hit_rect = pygame.Rect(0, 0, TILE_SIZE // 2, TILE_SIZE // 2)
+        self.hit_rect = pygame.Rect(0, 0, TILE_SIZE // 4, TILE_SIZE // 4)
         self.rect.topleft = (MAP_OFFSET_X + x * TILE_SIZE, MAP_OFFSET_Y + y * TILE_SIZE)
         self.hit_rect.center = self.rect.center
         self.pos = pygame.math.Vector2(self.hit_rect.center)
@@ -31,14 +31,15 @@ class Player(pygame.sprite.Sprite):
     def update(self):
         self.get_keys()
         self.pos += self.vel
+
         self.hit_rect.centerx = self.pos.x
-        self.collide_width_walls("x")
+        self.collide_with_walls("x")
 
         self.hit_rect.centery = self.pos.y
-        self.collide_width_wals("y")
+        self.collide_with_walls("y")
         self.rect.center = self.hit_rect.center
 
-    def collide_width_walls(self, dir):
+    def collide_with_walls(self, dir):
         if dir == "x":
             for wall in self.game.walls:
                 if self.hit_rect.colliderect(wall.hit_rect):

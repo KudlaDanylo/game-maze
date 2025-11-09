@@ -43,7 +43,7 @@ for wall in inner_walls_list:
 
 if empty_tiles:
     start_pos = random.choice(empty_tiles)
-    game.player = Player(game, start_pos[1], start_pos[1])
+    game.player = Player(game, start_pos[0], start_pos[1])
 
 
 

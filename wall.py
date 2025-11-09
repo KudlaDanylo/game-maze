@@ -6,7 +6,7 @@ class Wall(pygame.sprite.Sprite):
         if is_inner:
             self.groups = game.all_sprites, game.walls, game.inner_walls
         super().__init__(self.groups)
-        self.leyer = WALL_LAYER
+
         self.game = game
         self.x = x
         self.y = y
