@@ -1,12 +1,12 @@
 import random
 import sys
 import pygame
-
-
 from constants import *
 from map_generation import  maze_generation
 from wall import Wall
 from player import Player
+from exit import Exit
+from monster import Patrol
 
 class Game:
     def __init__(self):
@@ -17,10 +17,16 @@ class Game:
         self.all_sprites = pygame.sprite.LayeredUpdates()
         self.walls = pygame.sprite.Group()
         self.inner_walls = pygame.sprite.Group()
+        self.exit_group = pygame.sprite.Group()
+        self.monsters = pygame.sprite.Group()
 
     def new_level(self):
-        self.maze_data = maze_generation(MAZE_WIDTH, MAZE_HEIGHT)
 
+        for sprite in self.all_sprites:
+            self.kill()
+
+        self.maze_data = maze_generation(MAZE_WIDTH, MAZE_HEIGHT)
+    #Стіни
         inner_walls_list = []
         empty_tiles = []
         for row, tiles in enumerate(self.maze_data):
@@ -37,11 +43,54 @@ class Game:
 
         for wall in inner_walls_list:
                 wall.draw_wall_segments()
+    #Вихід
+        # exit_pos = (MAZE_WIDTH - 2, MAZE_HEIGHT - 2)
+        # if exit_pos in empty_tiles:
+        #     empty_tiles.remove(exit_pos)
 
-
+        # Exit(self, exit_pos[0], exit_pos[1])
+    #Гравець
+        self.player_start_pos = None
         if empty_tiles:
-            start_pos = random.choice(empty_tiles)
-            self.player = Player(self, start_pos[0], start_pos[1])
+            self.player_start_pos = random.choice(empty_tiles)
+            empty_tiles.remove(self.player_start_pos)
+            self.player = Player(self, self.player_start_pos[0], self.player_start_pos[1])
+
+    #Вихід
+        furthest_pos = None
+        max_distance = - 1
+        for pos in empty_tiles:
+            distance = abs(pos[0] - self.player_start_pos[0]) + abs(pos[1] - self.player_start_pos[1])
+
+        if distance > max_distance:
+            max_distance = distance
+            furthest_pos = pos
+
+        if furthest_pos:
+            Exit(self, furthest_pos[0], furthest_pos[1])
+            empty_tiles.remove(furthest_pos)
+
+    #Монстри
+        safe_spawn_points = []
+        if self.player_start_pos:
+            for pos in empty_tiles:
+                distance = abs(pos[0] - self.player_start_pos[0]) + abs(pos[1] - self.player_start_pos[1])
+
+                if distance > 5:
+                    safe_spawn_points.append(pos)
+
+        num_monsters = 1
+        # if len(safe_spawn_points) < num_monsters:
+        #     for pos in empty_tiles:
+        #         if pos not in safe_spawn_points:
+        #             safe_spawn_points.append(pos)
+
+        for _ in range(num_monsters):
+            if safe_spawn_points:
+                pos = random.choice(safe_spawn_points)
+                safe_spawn_points.remove(pos)
+                Patrol(self, pos[0], pos[1])
+
 
     def run(self):
         self.running = True
@@ -59,6 +108,10 @@ class Game:
 
     def update(self):
         self.all_sprites.update()
+        if self.player:
+            exit_hits = pygame.sprite.spritecollide(self.player, self.exit_group, False)
+            if exit_hits:
+                self.running = False
 
     def draw(self):
         self.screen.fill(SCREEN_COLOR)

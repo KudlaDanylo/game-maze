@@ -21,6 +21,10 @@ class Wall(pygame.sprite.Sprite):
         self.rect.topleft = (MAP_OFFSET_X + x * TILE_SIZE, MAP_OFFSET_Y + y * TILE_SIZE)
         self.hit_rect = self.rect.copy()
 
+        if is_inner:
+            self.hit_rect.inflate_ip(-TILE_SIZE + WALL_THICKNESS, -TILE_SIZE + WALL_THICKNESS)
+
+
 
 
     def draw_wall_segments(self):

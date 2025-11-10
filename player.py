@@ -10,7 +10,7 @@ class Player(pygame.sprite.Sprite):
         self.image = pygame.Surface((TILE_SIZE, TILE_SIZE), pygame.SRCALPHA)
         pygame.draw.circle(self.image, PLAYER_COLOR, (TILE_SIZE // 2, TILE_SIZE //2), TILE_SIZE // 4)
         self.rect = self.image.get_rect()
-        self.hit_rect = pygame.Rect(0, 0, TILE_SIZE // 4, TILE_SIZE // 4)
+        self.hit_rect = pygame.Rect(0, 0, TILE_SIZE * 0.75, TILE_SIZE * 0.75)
         self.rect.topleft = (MAP_OFFSET_X + x * TILE_SIZE, MAP_OFFSET_Y + y * TILE_SIZE)
         self.hit_rect.center = self.rect.center
         self.pos = pygame.math.Vector2(self.hit_rect.center)
