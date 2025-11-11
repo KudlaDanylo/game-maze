@@ -3,12 +3,13 @@ import sys
 
 import pygame.constants
 
+
 from constants import *
 from map_generation import  maze_generation
 from wall import Wall
 from player import Player
 from exit import Exit
-from monster import Patrol
+from monster import Patrol, Hunter
 from  coin import Coin
 
 class Game:
@@ -32,6 +33,8 @@ class Game:
         self.maze_data = []
         self.player = None
         self.player_start_pos = None
+        self.level = 1
+        self.lives = PLAYER_LIVES
 
 
     def new_level(self):
@@ -93,17 +96,17 @@ class Game:
                 if distance > 5:
                     safe_spawn_points.append(pos)
 
-        num_monsters = 1
-        # if len(safe_spawn_points) < num_monsters:
-        #     for pos in empty_tiles:
-        #         if pos not in safe_spawn_points:
-        #             safe_spawn_points.append(pos)
-
-        for _ in range(num_monsters):
+        num_monsters = 5
+        for i in range(num_monsters):
             if safe_spawn_points:
                 pos = random.choice(safe_spawn_points)
                 safe_spawn_points.remove(pos)
-                Patrol(self, pos[0], pos[1])
+                if i < 2:
+                    Hunter(self, pos[0], pos[1])
+                else:
+                    Patrol(self, pos[0], pos[1])
+            else:
+                break
 
         num_coins = 7
         for _ in range(num_coins):
@@ -141,9 +144,27 @@ class Game:
                     self.coins_collected -= COINS_FOR_ROCKET
                     self.rockets += 1
 
+            self.check_monster_hits()
+
             exit_hits = pygame.sprite.spritecollide(self.player, self.exit_group, False)
             if exit_hits:
                 self.running = False
+
+    def check_monster_hits(self):
+        if not self.player:
+            return
+        now = pygame.time.get_ticks() / 1000
+        if now - self.player.last_damage_time > DAMAGE_COOLDOWN:
+            for monster in self.monsters:
+                if self.player.hit_rect.colliderect(monster.hit_rect):
+                    self.player.take_damage(monster.damage)
+
+    def player_is_dead(self):
+        self.lives -= 1
+        if self.lives > 0:
+            self.player = Player(self, self.player_start_pos[0], self.player_start_pos[1])
+        else:
+            self.running = False
 
     def use_rocket(self):
         if self.rockets <= 0 or not self.player:
@@ -160,13 +181,42 @@ class Game:
             self.rockets -= 1
             closest_wall.kill()
             self.maze_data[closest_wall.y][closest_wall.x] = 0
+
+    def find_path(self, start_pos, end_pos):
+        grid = self.maze_data
+        queue = [(start_pos, [start_pos])]
+        visited = {start_pos}
+
+        while queue:
+            current_pos, path = queue.pop(0)
+            if current_pos == end_pos:
+                return path
+
+            x, y = current_pos
+            for dx, dy in [(0, -1), (0, 1), (-1, 0), (1, 0)]:
+                next_x, next_y = x + dx, y + dy
+                next_pos = (next_x, next_y)
+
+                if (0 <= next_x < MAZE_WIDTH and 0 <= next_y < MAZE_HEIGHT and grid[next_y][next_x] == 0 and next_pos not in visited):
+                    visited.add(next_pos)
+                    new_path = list(path)
+                    new_path.append(next_pos)
+                    queue.append((next_pos, new_path))
+
+        return
+
     def draw(self):
         self.screen.fill(SCREEN_COLOR)
         self.all_sprites.draw(self.screen)
-        coin_text = f"Монети: {self.coins_collected}/ {COINS_FOR_ROCKET}"
-        self.draw_text(coin_text, 10, 10, WHITE)
+        coin_text = f" {self.coins_collected}"
+        self.draw_text(coin_text, 1230, 12, WHITE)
         rocket_text = f"Ракети: {self.rockets}"
         self.draw_text(rocket_text, 200, 10, WHITE)
+        self.screen.blit(pygame.image.load("image/HP.png"), (400, 8))
+        #self.screen.blit(pygame.transform.scale(pygame.image.load("image/ob2.png"), (36, 36)), (400, 8))
+        self.screen.blit(pygame.image.load("image/ob4.png"), (470, 8))
+        self.screen.blit(pygame.image.load("image/HP.png"), (435, 8))
+        self.screen.blit(pygame.image.load("image/coin2.png"), (1200, 8))
         pygame.display.flip()
 
     def draw_text(self, text, x, y, color):

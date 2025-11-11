@@ -15,6 +15,8 @@ class Player(pygame.sprite.Sprite):
         self.hit_rect.center = self.rect.center
         self.pos = pygame.math.Vector2(self.hit_rect.center)
         self.vel = pygame.math.Vector2(0,0)
+        self.health = PLAYER_HEALTH
+        self.last_damage_time = 0
 
     def get_keys(self):
         self.vel = pygame.math.Vector2(0, 0)
@@ -57,3 +59,15 @@ class Player(pygame.sprite.Sprite):
                     if self.vel.y < 0:
                         self.hit_rect.top = wall.hit_rect.bottom
                     self.pos.y = self.hit_rect.centery
+
+    def take_damage(self, amount):
+        now = pygame.time.get_ticks()/ 1000
+        if now - self.last_damage_time > DAMAGE_COOLDOWN:
+            self.health -= amount
+            self.last_damage_time = now
+            if self.health <= 0:
+                self.die()
+
+    def die(self):
+        self.kill()
+        self.game.player_is_dead()
