@@ -5,7 +5,7 @@ INNER_WALL_GREY = (100, 100, 100)
 PLAYER_COLOR = (255, 153, 102)
 EXIT_COLOR = (186, 173, 169)
 PATROL_COLOR = (255, 47, 47)
-
+WHITE = (255, 255, 255)
 PLAYER_SPEED = 5
 MONSTER_SPEED = 2
 
@@ -29,5 +29,9 @@ MAP_OFFSET_Y = 50
 MAZE_WIDTH = (SCREEN_WIDTH - MAP_OFFSET_X) // TILE_SIZE
 MAZE_HEIGHT = (SCREEN_HEIGHT - MAP_OFFSET_Y) // TILE_SIZE
 
+COINS_FOR_ROCKET = 5
+
+
 """Завантаження image"""
 WALL_TEXTURE = pygame.transform.scale(pygame.image.load("image/Texture.jpg"),(TILE_SIZE, TILE_SIZE))
+COIN_TEXTURE = pygame.image.load("image/coin.png")

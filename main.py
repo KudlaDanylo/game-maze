@@ -1,24 +1,38 @@
 import random
 import sys
-import pygame
+
+import pygame.constants
+
 from constants import *
 from map_generation import  maze_generation
 from wall import Wall
 from player import Player
 from exit import Exit
 from monster import Patrol
+from  coin import Coin
 
 class Game:
     def __init__(self):
         pygame.init()
         self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
         pygame.display.set_caption("game")
+        self.dt = 0
+        self.font = pygame.font.Font(None, 40)
+        self.coins_collected = 0
+        self.rockets = 1
+
         self.clock = pygame.time.Clock()
         self.all_sprites = pygame.sprite.LayeredUpdates()
         self.walls = pygame.sprite.Group()
         self.inner_walls = pygame.sprite.Group()
         self.exit_group = pygame.sprite.Group()
         self.monsters = pygame.sprite.Group()
+        self.coins = pygame.sprite.Group()
+
+        self.maze_data = []
+        self.player = None
+        self.player_start_pos = None
+
 
     def new_level(self):
 
@@ -91,6 +105,13 @@ class Game:
                 safe_spawn_points.remove(pos)
                 Patrol(self, pos[0], pos[1])
 
+        num_coins = 7
+        for _ in range(num_coins):
+            if empty_tiles:
+                pos = random.choice(empty_tiles)
+                empty_tiles.remove(pos)
+                Coin(self, pos[0], pos[1])
+
 
     def run(self):
         self.running = True
@@ -106,17 +127,51 @@ class Game:
                 self.running = False
                 self.quit_game()
 
+             if event.type == pygame.KEYDOWN:
+                 if event.key == pygame.K_SPACE and self.rockets > 0:
+                     self.use_rocket()
+
     def update(self):
         self.all_sprites.update()
         if self.player:
+            coin_hits = pygame.sprite.spritecollide(self.player, self.coins, True)
+            for hit in coin_hits:
+                self.coins_collected += 1
+                if self.coins_collected >= COINS_FOR_ROCKET:
+                    self.coins_collected -= COINS_FOR_ROCKET
+                    self.rockets += 1
+
             exit_hits = pygame.sprite.spritecollide(self.player, self.exit_group, False)
             if exit_hits:
                 self.running = False
 
+    def use_rocket(self):
+        if self.rockets <= 0 or not self.player:
+            return
+        closest_wall = None
+        min_dist = float("inf")
+        for wall in self.inner_walls:
+            dist = self.player.pos.distance_to(wall.hit_rect.center)
+            if dist < min_dist:
+                min_dist = dist
+                closest_wall = wall
+
+        if closest_wall and min_dist < TILE_SIZE * 2:
+            self.rockets -= 1
+            closest_wall.kill()
+            self.maze_data[closest_wall.y][closest_wall.x] = 0
     def draw(self):
         self.screen.fill(SCREEN_COLOR)
         self.all_sprites.draw(self.screen)
+        coin_text = f"Монети: {self.coins_collected}/ {COINS_FOR_ROCKET}"
+        self.draw_text(coin_text, 10, 10, WHITE)
+        rocket_text = f"Ракети: {self.rockets}"
+        self.draw_text(rocket_text, 200, 10, WHITE)
         pygame.display.flip()
+
+    def draw_text(self, text, x, y, color):
+        text_surface = self.font.render(text, True, color)
+        self.screen.blit(text_surface, (x, y))
 
     def quit_game(self):
         pygame.quit()
