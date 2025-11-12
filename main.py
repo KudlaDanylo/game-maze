@@ -20,7 +20,7 @@ class Game:
         self.dt = 0
         self.font = pygame.font.Font(None, 40)
         self.coins_collected = 0
-        self.rockets = 1
+        self.rockets = 8
 
         self.clock = pygame.time.Clock()
         self.all_sprites = pygame.sprite.LayeredUpdates()
@@ -153,7 +153,7 @@ class Game:
     def check_monster_hits(self):
         if not self.player:
             return
-        now = pygame.time.get_ticks() / 1000
+        now = pygame.time.get_ticks() / 500
         if now - self.player.last_damage_time > DAMAGE_COOLDOWN:
             for monster in self.monsters:
                 if self.player.hit_rect.colliderect(monster.hit_rect):
@@ -214,9 +214,9 @@ class Game:
         self.draw_text(rocket_text, 200, 10, WHITE)
         self.screen.blit(pygame.image.load("image/HP.png"), (400, 8))
         #self.screen.blit(pygame.transform.scale(pygame.image.load("image/ob2.png"), (36, 36)), (400, 8))
-        self.screen.blit(pygame.image.load("image/ob4.png"), (470, 8))
+        self.screen.blit(pygame.image.load("image/lostHP.png"), (470, 8))
         self.screen.blit(pygame.image.load("image/HP.png"), (435, 8))
-        self.screen.blit(pygame.image.load("image/coin2.png"), (1200, 8))
+        self.screen.blit(pygame.image.load("image/money.png"), (1200, 8))
         pygame.display.flip()
 
     def draw_text(self, text, x, y, color):
