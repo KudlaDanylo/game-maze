@@ -10,7 +10,7 @@ from wall import Wall
 from player import Player
 from exit import Exit
 from monster import Patrol, Hunter
-from  coin import Coin
+from coin import Coin
 
 class Game:
     def __init__(self):
@@ -19,8 +19,9 @@ class Game:
         pygame.display.set_caption("game")
         self.dt = 0
         self.font = pygame.font.Font(None, 40)
+        self.fog_surface = pygame.Surface(self.screen.get_size(), pygame.SRCALPHA)
         self.coins_collected = 0
-        self.rockets = 8
+        self.rockets = 0
 
         self.clock = pygame.time.Clock()
         self.all_sprites = pygame.sprite.LayeredUpdates()
@@ -60,12 +61,7 @@ class Game:
 
         for wall in inner_walls_list:
                 wall.draw_wall_segments()
-    #Вихід
-        # exit_pos = (MAZE_WIDTH - 2, MAZE_HEIGHT - 2)
-        # if exit_pos in empty_tiles:
-        #     empty_tiles.remove(exit_pos)
 
-        # Exit(self, exit_pos[0], exit_pos[1])
     #Гравець
         self.player_start_pos = None
         if empty_tiles:
@@ -73,19 +69,32 @@ class Game:
             empty_tiles.remove(self.player_start_pos)
             self.player = Player(self, self.player_start_pos[0], self.player_start_pos[1])
 
-    #Вихід
-        furthest_pos = None
-        max_distance = - 1
-        for pos in empty_tiles:
-            distance = abs(pos[0] - self.player_start_pos[0]) + abs(pos[1] - self.player_start_pos[1])
+        corners = {
+            "top_left": (1,1),
+            "top_right": (MAZE_WIDTH - 2, 1),
+            "bottom_left": (1, MAZE_HEIGHT - 2),
+            "bottom_right": (MAZE_WIDTH - 2, MAZE_HEIGHT - 2)
+        }
+        furthest_corner_pos = None
+        max_distance = -1
+        px, py = self.player_start_pos
 
-        if distance > max_distance:
-            max_distance = distance
-            furthest_pos = pos
+        for corner_name, (cx, cy) in corners.items():
+            distance = abs(cx - px) + abs(cy - py)
+            if distance > max_distance:
+                max_distance = distance
+                furthest_corner_pos = (cx, cy)
 
-        if furthest_pos:
-            Exit(self, furthest_pos[0], furthest_pos[1])
-            empty_tiles.remove(furthest_pos)
+        exit_pos = furthest_corner_pos
+        if exit_pos[0]< MAZE_WIDTH / 2:
+            texture_to_use = EXIT_TEXTURE_LEFT
+        else:
+            texture_to_use = EXIT_TEXTURE_RIGHT
+
+        Exit(self, exit_pos[0], exit_pos[1], texture_to_use)
+
+        if exit_pos in empty_tiles:
+            empty_tiles.remove(exit_pos)
 
     #Монстри
         safe_spawn_points = []
@@ -208,6 +217,12 @@ class Game:
     def draw(self):
         self.screen.fill(SCREEN_COLOR)
         self.all_sprites.draw(self.screen)
+        self.fog_surface.fill((*FOG_COLOR, FOG_ALPHA))
+        if self.player:
+            pygame.draw.circle(self.fog_surface,(*FOG_COLOR, FOG_ALPHA_GRADIENT), self.player.hit_rect.center, VISION_RADIUS_OUTER)
+        if self.player:
+            pygame.draw.circle(self.fog_surface,(0,0,0,0), self.player.hit_rect.center, VISION_RADIUS_INNER)
+        self.screen.blit(self.fog_surface, (0, 0))
         coin_text = f" {self.coins_collected}"
         self.draw_text(coin_text, 1230, 12, WHITE)
         rocket_text = f"Ракети: {self.rockets}"

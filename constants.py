@@ -9,7 +9,7 @@ HUNTER_COLOR = (200, 0, 100)
 WHITE = (255, 255, 255)
 
 ANIMATION_SPEED = 0.15
-PLAYER_SPEED = 5
+PLAYER_SPEED = 3
 MONSTER_SPEED = 2
 HUNTER_SPEED = 2
 HUNTER_VISION_RANGE = 500
@@ -23,6 +23,15 @@ HUNTER_DAMAGE = 10
 """рівні спавну"""
 WALL_LAYER = 1
 PLAYER_LAYER = 2
+
+FOG_COLOR = (0, 0, 0)
+FOG_ALPHA = 252
+VISION_RADIUS_INNER = 50
+VISION_RADIUS_OUTER = 140
+FOG_ALPHA_GRADIENT = 250
+
+
+
 
 """Розміри"""
 SCREEN_WIDTH = 1497
@@ -46,6 +55,8 @@ COINS_FOR_ROCKET = 5
 WALL_TEXTURE = pygame.transform.scale(pygame.image.load("image/Texture.jpg"),(TILE_SIZE, TILE_SIZE))
 COIN_TEXTURE = pygame.image.load("image/coin.png")
 HUNTER_TEXTURE = pygame.image.load("image/soldier2.png")
+EXIT_TEXTURE_RIGHT = pygame.image.load("image/door_right.png")
+EXIT_TEXTURE_LEFT = pygame.image.load("image/door_left.png")
 
 """Завантаження image pacman"""
 PACMAN_RIGHT = [
