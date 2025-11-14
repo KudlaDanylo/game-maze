@@ -8,6 +8,10 @@ PATROL_COLOR = (255, 47, 47)
 HUNTER_COLOR = (200, 0, 100)
 WHITE = (255, 255, 255)
 
+COLOR_SHOP_BG = (10, 20, 30, 220)
+COLOR_BUTTON = (80, 80, 80)
+COLOR_BUTTON_HOVER = (110, 110, 110)
+
 ANIMATION_SPEED = 0.15
 PLAYER_SPEED = 3
 MONSTER_SPEED = 2
@@ -39,7 +43,8 @@ SCREEN_HEIGHT = 810
 
 TILE_SIZE = 24
 WALL_THICKNESS = 8
-
+ICON_SIZE = (TILE_SIZE * 2, TILE_SIZE * 2)
+SHOP_ICON_SIZE = (TILE_SIZE * 3, TILE_SIZE * 3)
 
 """Відступ від країв екрану"""
 MAP_OFFSET_X = 10
@@ -49,8 +54,22 @@ HEART_PADDING = 8
 MAZE_WIDTH = (SCREEN_WIDTH - MAP_OFFSET_X) // TILE_SIZE
 MAZE_HEIGHT = (SCREEN_HEIGHT - MAP_OFFSET_Y) // TILE_SIZE
 
+"""Ціни на товари"""
 COINS_FOR_ROCKET = 5
+COINS_FOR_SMOKE = 5
 
+"""Димова завіса"""
+SMOKE_DURATION = 6.0
+
+"""інтерфейс магазину"""
+HUD_FONT_SIZE = 30
+SHOP_TITLE_FONT_SIZE = 40
+SHOP_ITEM_FONT_SIZE = 28
+
+"""icon image"""
+ICON_SHOP = pygame.image.load("image/icon_shop.png")
+ICON_ROCKET = pygame.image.load("image/rocket.png")
+ICON_SMOKE = pygame.image.load("image/smoke_grenade.png")
 
 """Завантаження image"""
 WALL_TEXTURE = pygame.transform.scale(pygame.image.load("image/Texture.jpg"),(TILE_SIZE, TILE_SIZE))
@@ -60,6 +79,13 @@ EXIT_TEXTURE_RIGHT = pygame.image.load("image/door_right.png")
 EXIT_TEXTURE_LEFT = pygame.image.load("image/door_left.png")
 HEART_TEXTURE = pygame.image.load("image/HP.png")
 HEART_LOST_TEXTURE = pygame.image.load("image/lostHP.png")
+
+"""Завантаження image smoke"""
+SMOKE_FRAMES = [
+    pygame.image.load("smoke/smoke1.png"),
+    pygame.image.load("smoke/smoke2.png"),
+    pygame.image.load("smoke/smoke3.png"),
+]
 
 """Завантаження image pacman"""
 PACMAN_RIGHT = [

@@ -138,16 +138,40 @@ class Hunter(BaseMonster):
         self.vel = pygame.math.Vector2(self.patrol_speed, 0)
         if random.choice([True, False]):
             self.vel = self.vel.rotate(90)
+    def can_see_player(self):
+        if not self.game.player:
+            return False
+
+        for smoke in self.game.smokes:
+            if smoke.hit_rect.colliderect(self.game.player.hit_rect):
+                return False
+        p1 = self.pos
+        p2 = self.game.player.pos
+
+        for smoke in self.game.smokes:
+            if smoke.hit_rect.clipline(p1, p2):
+                vec_to_monster = self.pos - p2
+                player_vel = self.game.player.vel
+                if player_vel.length_squared() == 0:
+                    return False
+                dot_product = vec_to_monster.dot(player_vel)
+                if dot_product > 0:
+                    return True
+                else:
+                    return False
+        return True
+
 
     def update(self):
-        if not self.game.player:
-            self.state = "patrolling"
-        else:
+        is_player_visible = False
+        if self.game.player:
             dist = self.pos.distance_to(self.game.player.pos)
-            if dist < HUNTER_VISION_RANGE:
-                self.state = "chasing"
-            else:
-                self.state = "patrolling"
+            if dist < HUNTER_VISION_RANGE and self.can_see_player():
+                is_player_visible = True
+        if is_player_visible:
+            self.state = "chasing"
+        else:
+            self.state = "patrolling"
 
         if self.state == "chasing":
             self.chase(self.game.dt)

@@ -1,6 +1,8 @@
 import random
 import sys
 
+import pygame.constants
+
 from constants import *
 from map_generation import  maze_generation
 from wall import Wall
@@ -9,6 +11,7 @@ from exit import Exit
 from monster import Patrol, Hunter
 from coin import Coin
 from heart import Heart
+from smoke import Smoke
 
 class Game:
     def __init__(self):
@@ -16,10 +19,17 @@ class Game:
         self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
         pygame.display.set_caption("game")
         self.dt = 0
+
+        self.font_hud =pygame.font.Font(None, HUD_FONT_SIZE)
+        self.font_shop_title = pygame.font.Font(None, SHOP_TITLE_FONT_SIZE)
+        self.font_shop_item = pygame.font.Font(None, SHOP_ITEM_FONT_SIZE)
         self.font = pygame.font.Font(None, 40)
+
+        self.game_state = "playing"
         self.fog_surface = pygame.Surface(self.screen.get_size(), pygame.SRCALPHA)
         self.coins_collected = 0
         self.rockets = 0
+        self.smoke_grenades = 0
 
         self.clock = pygame.time.Clock()
         self.all_sprites = pygame.sprite.LayeredUpdates()
@@ -29,6 +39,7 @@ class Game:
         self.monsters = pygame.sprite.Group()
         self.coins = pygame.sprite.Group()
         self.ui_sprites = pygame.sprite.LayeredUpdates()
+        self.smokes = pygame.sprite.Group()
 
         self.heart_sprites = []
         self.maze_data = []
@@ -37,6 +48,14 @@ class Game:
         self.level = 1
         self.lives = PLAYER_LIVES
 
+
+        shop_btn_rect_size = SHOP_ICON_SIZE[0]
+        self.shop_button_rect = pygame.Rect(SCREEN_WIDTH - 400 - shop_btn_rect_size - 10, 8, shop_btn_rect_size, shop_btn_rect_size)
+        shop_w = 400
+        shop_h = 300
+        self.shop_window_rect = pygame.Rect((SCREEN_WIDTH - shop_w) // 2, (SCREEN_HEIGHT - shop_h) // 2, shop_w, shop_h)
+        self.buy_rocket_rect = pygame.Rect(50, 80, shop_w - 100, 60)
+        self.buy_smoke_rect = pygame.Rect(50, 160, shop_w - 100, 60)
 
     def new_level(self):
 
@@ -147,29 +166,83 @@ class Game:
                 self.running = False
                 self.quit_game()
 
+             if event.type == pygame.MOUSEBUTTONDOWN:
+                 mouse_pos = pygame.mouse.get_pos()
+
+                 if self.game_state == "playing":
+                     if event.button == 3:
+                         if self.smoke_grenades > 0:
+                             distance = self.player.pos.distance_to(mouse_pos)
+                             if distance <= VISION_RADIUS_OUTER:
+                                 Smoke(self, mouse_pos)
+                                 self.smoke_grenades -= 1
+
+                     elif event.button == 1:
+                         if self.shop_button_rect.collidepoint(mouse_pos):
+                             self.game_state = "shop"
+
+                 elif self.game_state == "shop":
+                     if event.button == 1:
+                         local_pos = (mouse_pos[0] - self.shop_window_rect.x, mouse_pos[1] - self.shop_window_rect.y)
+                         if self.buy_rocket_rect.collidepoint(local_pos):
+                             self.buy_item("rocket")
+                         elif self.buy_smoke_rect.collidepoint(local_pos):
+                             self.buy_item("smoke")
+                         elif not self.shop_window_rect.collidepoint(mouse_pos):
+                             self.game_state = "playing"
+
+
              if event.type == pygame.KEYDOWN:
                  if event.key == pygame.K_SPACE and self.rockets > 0:
                      self.use_rocket()
 
+    def buy_item(self, item_type):
+        if item_type == "rocket":
+            if self.coins_collected >= COINS_FOR_ROCKET:
+                self.coins_collected -= COINS_FOR_ROCKET
+                self.rockets += 1
+
+        elif item_type == "smoke":
+            if self.coins_collected >= COINS_FOR_SMOKE:
+                self.coins_collected -= COINS_FOR_SMOKE
+                self.smoke_grenades += 1
+
+
     def update(self):
-        self.all_sprites.update()
-        if self.player:
-            coin_hits = pygame.sprite.spritecollide(self.player, self.coins, True)
-            for hit in coin_hits:
-                self.coins_collected += 1
-                if self.coins_collected >= COINS_FOR_ROCKET:
-                    self.coins_collected -= COINS_FOR_ROCKET
-                    self.rockets += 1
+        if self.game_state == "playing":
+            self.all_sprites.update()
 
-            self.check_monster_hits()
+            if self.player:
+                self.check_coin_hits()
+                self.check_exit_hits()
+                self.check_monster_hits()
 
-            exit_hits = pygame.sprite.spritecollide(self.player, self.exit_group, False)
-            if exit_hits:
-                self.running = False
+
+    def check_coin_hits(self):
+        if not self.player:
+            return
+        coin_hits = pygame.sprite.spritecollide(self.player, self.coins, True)
+        if coin_hits:
+            self.coins_collected += 1
+
+    def check_exit_hits(self):
+        if not self.player:
+            return
+        exit_hits = pygame.sprite.spritecollide(self.player, self.exit_group, False)
+        if exit_hits:
+            self.running = False
 
     def check_monster_hits(self):
         if not self.player:
             return
+        is_player_in_smoke = False
+        for smoke in self.smokes:
+            if smoke.hit_rect.colliderect(self.player.hit_rect):
+                is_player_in_smoke = True
+                break
+        if is_player_in_smoke:
+            return
+
         now = pygame.time.get_ticks() / 500
         if now - self.player.last_damage_time > DAMAGE_COOLDOWN:
             for monster in self.monsters:
@@ -237,14 +310,45 @@ class Game:
         self.ui_sprites.draw(self.screen)
         coin_text = f" {self.coins_collected}"
         self.draw_text(coin_text, 1230, 12, WHITE)
-        rocket_text = f"Ракети: {self.rockets}"
-        self.draw_text(rocket_text, 200, 10, WHITE)
+        rocket_text = f" {self.rockets}"
+        self.draw_text(rocket_text, 1325, 10, WHITE)
+        smoke_text = f"{self.smoke_grenades}"
+        self.draw_text(smoke_text, 1425, 10, WHITE)
 
         #if self.player:
             #self.draw_text(f"HP :{self.player.health}", 10, 70, WHITE)
-
+        self.screen.blit(ICON_SHOP, self.shop_button_rect)
+        if self.game_state == "shop":
+            self.draw_shop_window()
+        self.screen.blit(pygame.image.load("image/rocket.png"), (1300, 8))
         self.screen.blit(pygame.image.load("image/money.png"), (1200, 8))
+        self.screen.blit(pygame.image.load("image/smoke_grenade.png"), (1400, 8))
+        #self.screen.blit(pygame.image.load("image/s1.png"), (1100, 8))
         pygame.display.flip()
+
+    def draw_shop_window(self):
+        wind_back = pygame.Surface((self.shop_window_rect.width, self.shop_window_rect.height), pygame.SRCALPHA)
+        wind_back.fill(COLOR_SHOP_BG)
+        self.screen.blit(wind_back, self.shop_window_rect.topleft)
+
+        title_surf = self.font_shop_title.render("Магазин", True, WHITE)
+        title_rect = title_surf.get_rect(center = (self.shop_window_rect.centerx, self.shop_window_rect.y + 30))
+        self.screen.blit(title_surf, title_rect)
+
+        mouse_pos = pygame.mouse.get_pos()
+        local_pos = (mouse_pos[0] - self.shop_window_rect.x, mouse_pos[1] - self.shop_window_rect.y)
+
+        color_rocket = COLOR_BUTTON_HOVER if self.buy_rocket_rect.collidepoint(local_pos) else COLOR_BUTTON
+        rocket_full_rect = self.buy_rocket_rect.move(self.shop_window_rect.topleft)
+        pygame.draw.rect(self.screen, color_rocket, rocket_full_rect)
+        self.screen.blit(ICON_ROCKET, (rocket_full_rect.x + 6, rocket_full_rect.centery - ICON_SIZE[1] // 2))
+        self.draw_text(f"Ракета - {COINS_FOR_ROCKET} монет", rocket_full_rect.x + 70, rocket_full_rect.centery - 10, WHITE)
+
+        color_smoke = COLOR_BUTTON_HOVER if self.buy_smoke_rect.collidepoint(local_pos) else COLOR_BUTTON
+        smoke_full_rect = self.buy_smoke_rect.move(self.shop_window_rect.topleft)
+        pygame.draw.rect(self.screen, color_smoke, smoke_full_rect)
+        self.screen.blit(ICON_SMOKE, (smoke_full_rect.x + 6, smoke_full_rect.centery - ICON_SIZE[1] // 2))
+        self.draw_text(f"Димова гранат - {COINS_FOR_SMOKE} монет", smoke_full_rect.x + 70, smoke_full_rect.centery - 10, WHITE)
 
     def draw_text(self, text, x, y, color):
         text_surface = self.font.render(text, True, color)
