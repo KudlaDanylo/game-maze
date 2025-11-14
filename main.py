@@ -1,9 +1,6 @@
 import random
 import sys
 
-import pygame.constants
-
-
 from constants import *
 from map_generation import  maze_generation
 from wall import Wall
@@ -11,6 +8,7 @@ from player import Player
 from exit import Exit
 from monster import Patrol, Hunter
 from coin import Coin
+from heart import Heart
 
 class Game:
     def __init__(self):
@@ -30,7 +28,9 @@ class Game:
         self.exit_group = pygame.sprite.Group()
         self.monsters = pygame.sprite.Group()
         self.coins = pygame.sprite.Group()
+        self.ui_sprites = pygame.sprite.LayeredUpdates()
 
+        self.heart_sprites = []
         self.maze_data = []
         self.player = None
         self.player_start_pos = None
@@ -42,7 +42,7 @@ class Game:
 
         for sprite in self.all_sprites:
             self.kill()
-
+        self.heart_sprites = []
         self.maze_data = maze_generation(MAZE_WIDTH, MAZE_HEIGHT)
     #Стіни
         inner_walls_list = []
@@ -68,7 +68,7 @@ class Game:
             self.player_start_pos = random.choice(empty_tiles)
             empty_tiles.remove(self.player_start_pos)
             self.player = Player(self, self.player_start_pos[0], self.player_start_pos[1])
-
+    #Вихід
         corners = {
             "top_left": (1,1),
             "top_right": (MAZE_WIDTH - 2, 1),
@@ -124,6 +124,14 @@ class Game:
                 empty_tiles.remove(pos)
                 Coin(self, pos[0], pos[1])
 
+    #Життя
+        for i in range(PLAYER_LIVES):
+            x_pos = 0 + ((36 + HEART_PADDING) * (PLAYER_LIVES - i))
+            y_pos = HEART_PADDING
+            heart = Heart(self, x_pos, y_pos)
+            self.heart_sprites.append(heart)
+        self.heart_sprites.sort(key=lambda sprite: sprite.rect.x)
+
 
     def run(self):
         self.running = True
@@ -170,6 +178,9 @@ class Game:
 
     def player_is_dead(self):
         self.lives -= 1
+        if self.lives < len(self.heart_sprites):
+            self.heart_sprites[self.lives].set_empty()
+
         if self.lives > 0:
             self.player = Player(self, self.player_start_pos[0], self.player_start_pos[1])
         else:
@@ -220,17 +231,18 @@ class Game:
         self.fog_surface.fill((*FOG_COLOR, FOG_ALPHA))
         if self.player:
             pygame.draw.circle(self.fog_surface,(*FOG_COLOR, FOG_ALPHA_GRADIENT), self.player.hit_rect.center, VISION_RADIUS_OUTER)
-        if self.player:
             pygame.draw.circle(self.fog_surface,(0,0,0,0), self.player.hit_rect.center, VISION_RADIUS_INNER)
         self.screen.blit(self.fog_surface, (0, 0))
+
+        self.ui_sprites.draw(self.screen)
         coin_text = f" {self.coins_collected}"
         self.draw_text(coin_text, 1230, 12, WHITE)
         rocket_text = f"Ракети: {self.rockets}"
         self.draw_text(rocket_text, 200, 10, WHITE)
-        self.screen.blit(pygame.image.load("image/HP.png"), (400, 8))
-        #self.screen.blit(pygame.transform.scale(pygame.image.load("image/ob2.png"), (36, 36)), (400, 8))
-        self.screen.blit(pygame.image.load("image/lostHP.png"), (470, 8))
-        self.screen.blit(pygame.image.load("image/HP.png"), (435, 8))
+
+        #if self.player:
+            #self.draw_text(f"HP :{self.player.health}", 10, 70, WHITE)
+
         self.screen.blit(pygame.image.load("image/money.png"), (1200, 8))
         pygame.display.flip()
 

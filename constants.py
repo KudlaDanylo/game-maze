@@ -44,6 +44,7 @@ WALL_THICKNESS = 8
 """Відступ від країв екрану"""
 MAP_OFFSET_X = 10
 MAP_OFFSET_Y = 50
+HEART_PADDING = 8
 
 MAZE_WIDTH = (SCREEN_WIDTH - MAP_OFFSET_X) // TILE_SIZE
 MAZE_HEIGHT = (SCREEN_HEIGHT - MAP_OFFSET_Y) // TILE_SIZE
@@ -57,6 +58,8 @@ COIN_TEXTURE = pygame.image.load("image/coin.png")
 HUNTER_TEXTURE = pygame.image.load("image/soldier2.png")
 EXIT_TEXTURE_RIGHT = pygame.image.load("image/door_right.png")
 EXIT_TEXTURE_LEFT = pygame.image.load("image/door_left.png")
+HEART_TEXTURE = pygame.image.load("image/HP.png")
+HEART_LOST_TEXTURE = pygame.image.load("image/lostHP.png")
 
 """Завантаження image pacman"""
 PACMAN_RIGHT = [
