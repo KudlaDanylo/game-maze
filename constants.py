@@ -35,7 +35,7 @@ VISION_RADIUS_OUTER = 140
 FOG_ALPHA_GRADIENT = 0#250
 
 
-
+CONTROL_ICON_SIZE = (32, 32)
 
 """Розміри"""
 SCREEN_WIDTH = 1497
@@ -65,21 +65,32 @@ SMOKE_DURATION = 6.0
 HUD_FONT_SIZE = 30
 SHOP_TITLE_FONT_SIZE = 40
 SHOP_ITEM_FONT_SIZE = 28
+GAME_OVER_FRONT_SIZE = 80
 
 SHOP_BUTTON_WIDTH = 300
 SHOP_BUTTON_HEIGHT = 60
 CLOSE_BUTTON_WIDTH = 80
 CLOSE_BUTTON_HEIGHT = 30
+GAME_OVER_BUTTON_WIDTH = 250
+GAME_OVER_BUTTON_HEIGHT = 50
 
 BUTTON_SHOP_BUY_NORMAL = pygame.image.load("image/shop_normal.png")
 BUTTON_SHOP_BUY_HOVER = pygame.image.load("image/shop_hover.png")
 BUTTON_SHOP_EXIT_NORMAL = pygame.image.load("image/shop_exit_norm.png")
 BUTTON_SHOP_EXIT_HOVER = pygame.image.load("image/shop_exit_hover.png")
+
+BUTTON_GAME_RESTART_NORMAL = pygame.image.load("image/game_restart_norm.png")
+BUTTON_GAME_RESTART_HOVER = pygame.image.load("image/game_restart_hover.png")
+BUTTON_GAME_EXIT_NORMAL = pygame.image.load("image/game_exit_norm.png")
+BUTTON_GAME_EXIT_HOVER = pygame.image.load("image/game_exit_hover.png")
+
 """icon image"""
 ICON_SHOP = pygame.image.load("image/icon_shop.png")
 ICON_ROCKET = pygame.image.load("image/rocket.png")
 ICON_SMOKE = pygame.image.load("image/smoke_grenade.png")
 ICON_MINE = pygame.image.load("image/mine.png")
+ICON_PLAY = pygame.image.load("image/play.png")
+ICON_PAUSE = pygame.image.load("image/pause.png")
 
 
 

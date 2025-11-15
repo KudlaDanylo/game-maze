@@ -12,7 +12,7 @@ from monster import Patrol, Hunter
 from coin import Coin
 from heart import Heart
 from smoke import Smoke
-from ui import Shop
+from ui import Shop, GameOver
 
 class Game:
     def __init__(self):
@@ -25,8 +25,9 @@ class Game:
 
 
         self.game_state = "playing"
+        self.is_paused = False
         self.fog_surface = pygame.Surface(self.screen.get_size(), pygame.SRCALPHA)
-        self.coins_collected = 0
+        self.coins_collected = 30
         self.rockets = 0
         self.smoke_grenades = 0
 
@@ -48,17 +49,43 @@ class Game:
         self.level = 1
         self.lives = PLAYER_LIVES
         self.shop = Shop(self)
+        self.game_over = GameOver(self)
 
-        shop_btn_rect_size = SHOP_ICON_SIZE[0]
-        self.shop_button_rect = pygame.Rect(SCREEN_WIDTH - 400 - shop_btn_rect_size - 10, 8, shop_btn_rect_size, shop_btn_rect_size)
+        shop_btn_rect_size_tuple = (SHOP_ICON_SIZE[0], SHOP_ICON_SIZE[1])
+        self.shop_button_rect = pygame.Rect(SCREEN_WIDTH - 400 - shop_btn_rect_size_tuple[0] - 10, 8, shop_btn_rect_size_tuple[0], shop_btn_rect_size_tuple[1])
+        self.pause_button_rect = pygame.Rect(self.shop_button_rect.left - CONTROL_ICON_SIZE[0] - 10, 10, CONTROL_ICON_SIZE[0], CONTROL_ICON_SIZE[1])
 
+
+    def start_new_game(self):
+        self.lives = PLAYER_LIVES
+        self.level = 1
+        self.coins_collected = 0
+        self.rockets = 0
+        self.smoke_grenades = 0
+        self.game_state = "playing"
+        self.is_paused = False
+        self.new_level()
 
     def new_level(self):
 
         for sprite in self.all_sprites:
-            self.kill()
+            sprite.kill()
         self.heart_sprites = []
         self.maze_data = maze_generation(MAZE_WIDTH, MAZE_HEIGHT)
+    #Життя
+        for i, heart in enumerate(self.heart_sprites):
+            if i < self.lives:
+                heart.set_full()
+            else:
+                heart.set_empty()
+
+        if not self.heart_sprites and self.lives > 0:
+            for i in range(self.lives):
+                x_pos = 0 + ((36 + HEART_PADDING) * (self.lives - i))
+                y_pos = HEART_PADDING
+                heart = Heart(self, x_pos, y_pos)
+                self.heart_sprites.append(heart)
+            self.heart_sprites.sort(key=lambda sprite: sprite.rect.x)
     #Стіни
         inner_walls_list = []
         empty_tiles = []
@@ -139,15 +166,6 @@ class Game:
                 empty_tiles.remove(pos)
                 Coin(self, pos[0], pos[1])
 
-    #Життя
-        for i in range(PLAYER_LIVES):
-            x_pos = 0 + ((36 + HEART_PADDING) * (PLAYER_LIVES - i))
-            y_pos = HEART_PADDING
-            heart = Heart(self, x_pos, y_pos)
-            self.heart_sprites.append(heart)
-        self.heart_sprites.sort(key=lambda sprite: sprite.rect.x)
-
-
     def run(self):
         self.running = True
         while self.running:
@@ -163,35 +181,34 @@ class Game:
                 self.quit_game()
 
              if self.game_state == "playing":
-                if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_SPACE and self.rockets > 0:
-                        self.use_rocket()
-
-                elif event.type == pygame.MOUSEBUTTONDOWN:
+                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                     mouse_pos = pygame.mouse.get_pos()
-                    if event.button == 1:
-                        if self.shop_button_rect.collidepoint(mouse_pos):
-                            self.game_state = "shop"
-                            if self.shop:
-                                self.shop.is_clicking_rocket = False
-                                self.shop.is_clicking_smoke = False
+                    if self.pause_button_rect.collidepoint(mouse_pos):
+                        self.is_paused = not self.is_paused
+                        self.game_state = 'playing'
+                        continue
 
-                    elif event.button == 3:
-                        if self.player and self.smoke_grenades > 0:
-                            if self.player.pos.distance_to(mouse_pos) <= VISION_RADIUS_OUTER:
-                                Smoke(self, mouse_pos)
-                                self.smoke_grenades -= 1
+                    if self.shop_button_rect.collidepoint(mouse_pos):
+                        self.game_state = "shop"
+                        self.is_paused = False
+                        continue
 
+                    if not self.is_paused and self.player and self.smoke_grenades > 0:
+                         if self.player.pos.distance_to(mouse_pos) <= VISION_RADIUS_OUTER:
+                             Smoke(self, mouse_pos)
+                             self.smoke_grenades -= 1
 
-
-
-
+                if event.type == pygame.KEYDOWN:
+                    if self.game_state == "playing" and not self.is_paused:
+                        if event.key == pygame.K_SPACE and self.rockets > 0:
+                            self.use_rocket()
              elif self.game_state == "shop":
                 if event.type in (pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP):
-                    self.shop.handle_event(event)
+                     self.shop.handle_event(event)
 
-                if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-                    self.game_state == "playing"
+
+             elif self.game_state == "game_over":
+                 self.game_over.handle_event(event)
 
 
     def buy_item(self, item_type):
@@ -207,15 +224,18 @@ class Game:
 
 
     def update(self):
-        if self.game_state == "playing":
-            self.all_sprites.update()
-        elif self.game_state == "shop":
+        if self.game_state == "shop":
             self.shop.update()
+        elif self.game_state == "game_over":
+            self.game_over.update()
 
-        if self.game_state == "playing" and self.player:
-            self.check_coin_hits()
-            self.check_exit_hits()
-            self.check_monster_hits()
+        elif self.game_state == "playing" and not self.is_paused:
+            self.all_sprites.update()
+
+            if  self.player:
+                self.check_coin_hits()
+                self.check_exit_hits()
+                self.check_monster_hits()
 
 
     def check_coin_hits(self):
@@ -248,16 +268,19 @@ class Game:
             for monster in self.monsters:
                 if self.player.hit_rect.colliderect(monster.hit_rect):
                     self.player.take_damage(monster.damage)
+                    break
 
     def player_is_dead(self):
         self.lives -= 1
-        if self.lives < len(self.heart_sprites):
+        if self.lives < len(self.heart_sprites) and self.lives >= 0:
             self.heart_sprites[self.lives].set_empty()
 
         if self.lives > 0:
             self.player = Player(self, self.player_start_pos[0], self.player_start_pos[1])
         else:
-            self.running = False
+            self.game_state = 'game_over'
+            self.player = None
+
 
     def use_rocket(self):
         if self.rockets <= 0 or not self.player:
@@ -318,37 +341,26 @@ class Game:
         #if self.player:
             #self.draw_text(f"HP :{self.player.health}", 10, 70, WHITE)
         self.screen.blit(ICON_SHOP, self.shop_button_rect)
+        if self.is_paused:
+            self.screen.blit(ICON_PLAY, self.pause_button_rect)
+        else:
+            self.screen.blit(ICON_PAUSE, self.pause_button_rect)
+
         if self.game_state == "shop":
             self.shop.draw()
+        elif self.game_state == 'game_over':
+            self.game_over.draw()
+        elif self.is_paused:
+            s = pygame.Surface(self.screen.get_size(), pygame.SRCALPHA)
+            s.fill((0, 0, 0, 150))
+            self.screen.blit(s,(0, 0))
         self.screen.blit(pygame.image.load("image/rocket.png"), (1300, 8))
         self.screen.blit(pygame.image.load("image/money.png"), (1200, 8))
         self.screen.blit(pygame.image.load("image/smoke_grenade.png"), (1400, 8))
         #self.screen.blit(pygame.image.load("image/s1.png"), (1100, 8))
         pygame.display.flip()
 
-    # def draw_shop_window(self):
-    #     wind_back = pygame.Surface((self.shop_window_rect.width, self.shop_window_rect.height), pygame.SRCALPHA)
-    #     wind_back.fill(COLOR_SHOP_BG)
-    #     self.screen.blit(wind_back, self.shop_window_rect.topleft)
-    #
-    #     title_surf = self.font_shop_title.render("Магазин", True, WHITE)
-    #     title_rect = title_surf.get_rect(center = (self.shop_window_rect.centerx, self.shop_window_rect.y + 30))
-    #     self.screen.blit(title_surf, title_rect)
-    #
-    #     mouse_pos = pygame.mouse.get_pos()
-    #     local_pos = (mouse_pos[0] - self.shop_window_rect.x, mouse_pos[1] - self.shop_window_rect.y)
-    #
-    #     color_rocket = COLOR_BUTTON_HOVER if self.buy_rocket_rect.collidepoint(local_pos) else COLOR_BUTTON
-    #     rocket_full_rect = self.buy_rocket_rect.move(self.shop_window_rect.topleft)
-    #     pygame.draw.rect(self.screen, color_rocket, rocket_full_rect)
-    #     self.screen.blit(ICON_ROCKET, (rocket_full_rect.x + 6, rocket_full_rect.centery - ICON_SIZE[1] // 2))
-    #     self.draw_text(f"Ракета - {COINS_FOR_ROCKET} монет", rocket_full_rect.x + 70, rocket_full_rect.centery - 10, WHITE)
-    #
-    #     color_smoke = COLOR_BUTTON_HOVER if self.buy_smoke_rect.collidepoint(local_pos) else COLOR_BUTTON
-    #     smoke_full_rect = self.buy_smoke_rect.move(self.shop_window_rect.topleft)
-    #     pygame.draw.rect(self.screen, color_smoke, smoke_full_rect)
-    #     self.screen.blit(ICON_SMOKE, (smoke_full_rect.x + 6, smoke_full_rect.centery - ICON_SIZE[1] // 2))
-    #     self.draw_text(f"Димова гранат - {COINS_FOR_SMOKE} монет", smoke_full_rect.x + 70, smoke_full_rect.centery - 10, WHITE)
+
 
     def draw_text(self, text, x, y, color):
         text_surface = self.font.render(text, True, color)

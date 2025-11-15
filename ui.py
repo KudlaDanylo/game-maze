@@ -97,3 +97,53 @@ class Shop:
         self.screen.blit(text_surf, text_rect)
 
 
+class GameOver:
+    def __init__(self, game):
+        self.game = game
+        self.screen = game.screen
+        self.is_hovering_restart = False
+        self.is_hovering_exit = False
+        self.font_title = pygame.font.Font(None, GAME_OVER_FRONT_SIZE)
+        self.font_button = pygame.font.Font(None, SHOP_ITEM_FONT_SIZE)
+        self.overlay = pygame.Surface(self.screen.get_size(), pygame.SRCALPHA)
+        self.overlay.fill((0, 0, 0, 100))
+
+        center_x = SCREEN_WIDTH // 2
+        self.restart_rect = pygame.Rect(center_x - (GAME_OVER_BUTTON_WIDTH // 2), 350, GAME_OVER_BUTTON_WIDTH, GAME_OVER_BUTTON_HEIGHT)
+        self.exit_rect = pygame.Rect(center_x - (GAME_OVER_BUTTON_WIDTH // 2), self.restart_rect.bottom + 20, GAME_OVER_BUTTON_WIDTH, GAME_OVER_BUTTON_HEIGHT)
+
+    def handle_event(self, event):
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            mouse_pos = pygame.mouse.get_pos()
+            if self.restart_rect.collidepoint(mouse_pos):
+                self.game.start_new_game()
+            elif self.exit_rect.collidepoint(mouse_pos):
+                self.game.quit_game()
+
+    def update(self):
+        mouse_pos = pygame.mouse.get_pos()
+        self.is_hovering_restart = self.restart_rect.collidepoint(mouse_pos)
+        self.is_hovering_exit = self.exit_rect.collidepoint(mouse_pos)
+
+    def draw(self):
+        self.screen.blit(self.overlay, (0, 0))
+        title_surf = self.font_title.render("ГРА ПРОГРАНА", True, WHITE)
+        title_rect = title_surf.get_rect(center=(SCREEN_WIDTH // 2, 250))
+        self.screen.blit(title_surf, title_rect)
+
+        if self.is_hovering_restart:
+            self.screen.blit(BUTTON_GAME_RESTART_HOVER, self.restart_rect.topleft)
+        else:
+            self.screen.blit(BUTTON_GAME_RESTART_NORMAL, self.restart_rect.topleft)
+        text_surf = self.font_button.render("Рестарт", True, WHITE)
+        text_rect = text_surf.get_rect(center=self.restart_rect.center)
+        self.screen.blit(text_surf, text_rect)
+
+        if self.is_hovering_exit:
+            self.screen.blit(BUTTON_GAME_EXIT_HOVER, self.exit_rect.topleft)
+        else:
+            self.screen.blit(BUTTON_GAME_EXIT_NORMAL, self.exit_rect.topleft)
+        text_surf = self.font_button.render("Вийти з гри", True, WHITE)
+        text_rect = text_surf.get_rect(center=self.exit_rect.center)
+        self.screen.blit(text_surf, text_rect)
+
