@@ -56,6 +56,7 @@ class Patrol(BaseMonster):
         self.direction = "idle"
         self.image = self.animation_frames[self.direction][self.current_frame]
         super().__init__(game, x, y)
+        self.type = "patrol"
         self.damage = PATROL_DAMAGE
         maze = self.game.maze_data
 
@@ -129,6 +130,7 @@ class Hunter(BaseMonster):
         self.image = HUNTER_TEXTURE
         super().__init__(game, x, y)
         self.damage = HUNTER_DAMAGE
+        self.type = "hunter"
         self.patrol_speed = MONSTER_SPEED
         self.chase_speed = HUNTER_SPEED
         self.state = "patrolling"

@@ -10,9 +10,11 @@ from player import Player
 from exit import Exit
 from monster import Patrol, Hunter
 from coin import Coin
+from mine import Mine
 from heart import Heart
 from smoke import Smoke
-from ui import Shop, GameOver
+from ui import Shop, GameOver, ChestUI
+from chest import Chest
 
 class Game:
     def __init__(self):
@@ -28,8 +30,9 @@ class Game:
         self.is_paused = False
         self.fog_surface = pygame.Surface(self.screen.get_size(), pygame.SRCALPHA)
         self.coins_collected = 30
-        self.rockets = 0
+        self.rockets = 10
         self.smoke_grenades = 0
+        self.mines = 0
 
         self.clock = pygame.time.Clock()
         self.all_sprites = pygame.sprite.LayeredUpdates()
@@ -41,6 +44,8 @@ class Game:
         self.ui_sprites = pygame.sprite.LayeredUpdates()
         self.smokes = pygame.sprite.Group()
         self.ui_sprites = pygame.sprite.LayeredUpdates()
+        self.mines_group = pygame.sprite.Group()
+        self.chests_group = pygame.sprite.Group()
 
         self.heart_sprites = []
         self.maze_data = []
@@ -50,6 +55,7 @@ class Game:
         self.lives = PLAYER_LIVES
         self.shop = Shop(self)
         self.game_over = GameOver(self)
+        self.chest_ui = ChestUI(self)
 
         shop_btn_rect_size_tuple = (SHOP_ICON_SIZE[0], SHOP_ICON_SIZE[1])
         self.shop_button_rect = pygame.Rect(SCREEN_WIDTH - 400 - shop_btn_rect_size_tuple[0] - 10, 8, shop_btn_rect_size_tuple[0], shop_btn_rect_size_tuple[1])
@@ -62,9 +68,30 @@ class Game:
         self.coins_collected = 0
         self.rockets = 0
         self.smoke_grenades = 0
+        self.mines = 0
         self.game_state = "playing"
         self.is_paused = False
         self.new_level()
+
+    def find_dead_emds(self):
+        dead_ends = []
+        if not self.maze_data:
+            return []
+        for y in range(1, MAZE_HEIGHT - 1):
+            for x in range(1, MAZE_WIDTH - 1):
+                if self.maze_data[y][x] == 0:
+                    wall_count = 0
+                    if self.maze_data[y-1][x] == 1:
+                        wall_count += 1
+                    if self.maze_data[y+1][x] == 1:
+                        wall_count += 1
+                    if self.maze_data[y][x-1] == 1:
+                        wall_count += 1
+                    if self.maze_data[y][x+1] == 1:
+                        wall_count += 1
+                    if wall_count == 3:
+                        dead_ends.append((x, y))
+        return dead_ends
 
     def new_level(self):
 
@@ -138,6 +165,20 @@ class Game:
         if exit_pos in empty_tiles:
             empty_tiles.remove(exit_pos)
 
+        dead_ends = self.find_dead_emds()
+        spawnable_dead_ends = [pos for pos in dead_ends if pos in empty_tiles]
+
+        yellow_chance = YELLOW_CHEST_SPAWN_CHANCE * self.level
+        blue_chance = BLUE_CHEST_SPAWN_CHANCE * self.level
+
+        for pos in spawnable_dead_ends:
+            empty_tiles.remove(pos)
+            if random.random() < blue_chance:
+                Chest(self, pos[0], pos[1], "blue")
+            elif random.random() < yellow_chance:
+                Chest(self, pos[0], pos[1], "yellow")
+
+
     #Монстри
         safe_spawn_points = []
         if self.player_start_pos:
@@ -183,6 +224,7 @@ class Game:
              if self.game_state == "playing":
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                     mouse_pos = pygame.mouse.get_pos()
+
                     if self.pause_button_rect.collidepoint(mouse_pos):
                         self.is_paused = not self.is_paused
                         self.game_state = 'playing'
@@ -193,18 +235,32 @@ class Game:
                         self.is_paused = False
                         continue
 
-                    if not self.is_paused and self.player and self.smoke_grenades > 0:
-                         if self.player.pos.distance_to(mouse_pos) <= VISION_RADIUS_OUTER:
-                             Smoke(self, mouse_pos)
-                             self.smoke_grenades -= 1
+                    if not self.is_paused and self.player:
+                        clicked_chests = [s for s in self.chests_group if s.rect.collidepoint(mouse_pos)]
+                        if clicked_chests:
+                            chest = clicked_chests[0]
+                            dist = self.player.pos.distance_to(chest.rect.center)
+                            if dist <= VISION_RADIUS_INNER:
+                                self.chest_ui.open(chest)
+                                continue
+
+                        if self.smoke_grenades > 0:
+                            if self.player.pos.distance_to(mouse_pos) <= VISION_RADIUS_OUTER:
+                                Smoke(self, mouse_pos)
+                                self.smoke_grenades -= 1
 
                 if event.type == pygame.KEYDOWN:
                     if self.game_state == "playing" and not self.is_paused:
                         if event.key == pygame.K_SPACE and self.rockets > 0:
                             self.use_rocket()
+                        if event.key == pygame.K_q and self.mines > 0:
+                            self.place_mine()
              elif self.game_state == "shop":
                 if event.type in (pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP):
                      self.shop.handle_event(event)
+
+             elif self.game_state == 'chest_open':
+                 self.chest_ui.handle_event(event)
 
 
              elif self.game_state == "game_over":
@@ -222,12 +278,19 @@ class Game:
                 self.coins_collected -= COINS_FOR_SMOKE
                 self.smoke_grenades += 1
 
+        elif item_type == "mine":
+            if self.coins_collected >= COINS_FOR_MINE:
+                self.coins_collected -= COINS_FOR_MINE
+                self.mines += 1
+
 
     def update(self):
         if self.game_state == "shop":
             self.shop.update()
         elif self.game_state == "game_over":
             self.game_over.update()
+        elif self.game_state == "chest_open":
+            self.chest_ui.update()
 
         elif self.game_state == "playing" and not self.is_paused:
             self.all_sprites.update()
@@ -237,6 +300,15 @@ class Game:
                 self.check_exit_hits()
                 self.check_monster_hits()
 
+    def place_mine(self):
+        if self.mines <= 0 or not self.player:
+            return
+        mouse_pos = pygame.mouse.get_pos()
+        distance = self.player.pos.distance_to(mouse_pos)
+
+        if distance <= VISION_RADIUS_INNER:
+            self.mines -= 1
+            Mine(self, mouse_pos)
 
     def check_coin_hits(self):
         if not self.player:
@@ -281,6 +353,30 @@ class Game:
             self.game_state = 'game_over'
             self.player = None
 
+    def roll_loot(self, chest_type):
+        if chest_type == "yellow":
+            population = list(range(1, 8))
+            weight = [40, 25, 15, 10, 5, 3, 2]
+            return random.choices(population, weight, k=1)[0]
+        elif chest_type == "blue":
+            return random.randint(5,20)
+        return 0
+
+    def accept_chest(self, chest_sprite):
+        if chest_sprite.type == "blue":
+            if self.coins_collected >= BLUE_CHEST_COST:
+                self.coins_collected -= BLUE_CHEST_COST
+            else:
+                self.chest_ui.close()
+                return
+
+        loot_amount = self.roll_loot(chest_sprite.type)
+        self.chest_ui.show_loot(loot_amount)
+
+    def collect_loot(self, chest_sprite):
+        loot_amount = self.chest_ui.loot_amount
+        self.coins_collected += loot_amount
+        chest_sprite.kill()
 
     def use_rocket(self):
         if self.rockets <= 0 or not self.player:
@@ -336,7 +432,8 @@ class Game:
         rocket_text = f" {self.rockets}"
         self.draw_text(rocket_text, 1325, 10, WHITE)
         smoke_text = f"{self.smoke_grenades}"
-        self.draw_text(smoke_text, 1425, 10, WHITE)
+        self.draw_text(smoke_text, 1400, 10, WHITE)
+        self.draw_text(f" {self.mines}", 10, 100, WHITE)
 
         #if self.player:
             #self.draw_text(f"HP :{self.player.health}", 10, 70, WHITE)
@@ -350,14 +447,18 @@ class Game:
             self.shop.draw()
         elif self.game_state == 'game_over':
             self.game_over.draw()
+        elif self.game_state == "chest_open":
+            self.chest_ui.draw()
         elif self.is_paused:
             s = pygame.Surface(self.screen.get_size(), pygame.SRCALPHA)
             s.fill((0, 0, 0, 150))
             self.screen.blit(s,(0, 0))
-        self.screen.blit(pygame.image.load("image/rocket.png"), (1300, 8))
-        self.screen.blit(pygame.image.load("image/money.png"), (1200, 8))
-        self.screen.blit(pygame.image.load("image/smoke_grenade.png"), (1400, 8))
-        #self.screen.blit(pygame.image.load("image/s1.png"), (1100, 8))
+        self.screen.blit(pygame.image.load("image/icon/rocket.png"), (1300, 8))
+        self.screen.blit(pygame.image.load("image/texture/mine_1.png"), (1200, 8))
+        self.screen.blit(pygame.image.load("image/icon/smoke_grenade.png"), (1400, 8))
+        #self.screen.blit(pygame.image.load("image/r1.png"), (660, 300))
+        #self.screen.blit(pygame.image.load("image/t1.png"), (760, 500))
+        #self.screen.blit(pygame.image.load("image/t1.png"), (630, 500))
         pygame.display.flip()
 
 

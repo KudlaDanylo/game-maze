@@ -57,6 +57,8 @@ MAZE_HEIGHT = (SCREEN_HEIGHT - MAP_OFFSET_Y) // TILE_SIZE
 """Ціни на товари"""
 COINS_FOR_ROCKET = 5
 COINS_FOR_SMOKE = 5
+COINS_FOR_MINE = 7
+BLUE_CHEST_COST = 10
 
 """Димова завіса"""
 SMOKE_DURATION = 6.0
@@ -74,64 +76,84 @@ CLOSE_BUTTON_HEIGHT = 30
 GAME_OVER_BUTTON_WIDTH = 250
 GAME_OVER_BUTTON_HEIGHT = 50
 
-BUTTON_SHOP_BUY_NORMAL = pygame.image.load("image/shop_normal.png")
-BUTTON_SHOP_BUY_HOVER = pygame.image.load("image/shop_hover.png")
-BUTTON_SHOP_EXIT_NORMAL = pygame.image.load("image/shop_exit_norm.png")
-BUTTON_SHOP_EXIT_HOVER = pygame.image.load("image/shop_exit_hover.png")
+CHEST_UI_WIDTH = 300
+CHEST_UI_HEIGHT = 300
+CHEST_IMAGE_SILE = (200, 170)
+CHEST_BUTTON_SIZE = (120, 35)
+CHEST_BUTTON_SIZE_CONTINUE = (130, 35)
 
-BUTTON_GAME_RESTART_NORMAL = pygame.image.load("image/game_restart_norm.png")
-BUTTON_GAME_RESTART_HOVER = pygame.image.load("image/game_restart_hover.png")
-BUTTON_GAME_EXIT_NORMAL = pygame.image.load("image/game_exit_norm.png")
-BUTTON_GAME_EXIT_HOVER = pygame.image.load("image/game_exit_hover.png")
+YELLOW_CHEST_SPAWN_CHANCE = 0.03
+BLUE_CHEST_SPAWN_CHANCE = 0.008
+
+BUTTON_SHOP_BUY_NORMAL = pygame.image.load("image/button/shop_normal.png")
+BUTTON_SHOP_BUY_HOVER = pygame.image.load("image/button/shop_hover.png")
+BUTTON_SHOP_EXIT_NORMAL = pygame.image.load("image/button/shop_exit_norm.png")
+BUTTON_SHOP_EXIT_HOVER = pygame.image.load("image/button/shop_exit_hover.png")
+
+BUTTON_GAME_RESTART_NORMAL = pygame.image.load("image/button/game_restart_norm.png")
+BUTTON_GAME_RESTART_HOVER = pygame.image.load("image/button/game_restart_hover.png")
+BUTTON_GAME_EXIT_NORMAL = pygame.image.load("image/button/game_exit_norm.png")
+BUTTON_GAME_EXIT_HOVER = pygame.image.load("image/button/game_exit_hover.png")
+
+BUTTON_CHEST_CANCEL_NORMAL = pygame.image.load("image/button/chest_norm.png")
+BUTTON_CHEST_CANCEL_HOVER = pygame.image.load("image/button/chest_hover.png")
+BUTTON_CHEST_ACCENT_NORMAL = pygame.image.load("image/button/chest_norm.png")
+BUTTON_CHEST_ACCENT_HOVER = pygame.image.load("image/button/chest_hover.png")
+BUTTON_CHEST_CONTINUE_NORMAL = pygame.image.load("image/button/chest_exit_norm.png")
+BUTTON_CHEST_CONTINUE_HOVER = pygame.image.load("image/button/chest_exit_hover.png")
+IMAGE_CHEST_SMALL = pygame.image.load("image/chest_small.png")
+IMAGE_CHEST_GREAT = pygame.image.load("image/chest_big.png")
 
 """icon image"""
-ICON_SHOP = pygame.image.load("image/icon_shop.png")
-ICON_ROCKET = pygame.image.load("image/rocket.png")
-ICON_SMOKE = pygame.image.load("image/smoke_grenade.png")
-ICON_MINE = pygame.image.load("image/mine.png")
-ICON_PLAY = pygame.image.load("image/play.png")
-ICON_PAUSE = pygame.image.load("image/pause.png")
+ICON_SHOP = pygame.image.load("image/icon/icon_shop.png")
+ICON_ROCKET = pygame.image.load("image/icon/rocket.png")
+ICON_SMOKE = pygame.image.load("image/icon/smoke_grenade.png")
+ICON_MINE = pygame.image.load("image/icon/mine.png")
+ICON_PLAY = pygame.image.load("image/icon/play.png")
+ICON_PAUSE = pygame.image.load("image/icon/pause.png")
+ICON_HEART = pygame.image.load("image/icon/HP.png")
+ICON_HEART_LOST = pygame.image.load("image/icon/lostHP.png")
 
 
-
-"""Завантаження image"""
-WALL_TEXTURE = pygame.transform.scale(pygame.image.load("image/Texture.jpg"),(TILE_SIZE, TILE_SIZE))
-COIN_TEXTURE = pygame.image.load("image/coin.png")
-HUNTER_TEXTURE = pygame.image.load("image/soldier2.png")
-EXIT_TEXTURE_RIGHT = pygame.image.load("image/door_right.png")
-EXIT_TEXTURE_LEFT = pygame.image.load("image/door_left.png")
-HEART_TEXTURE = pygame.image.load("image/HP.png")
-HEART_LOST_TEXTURE = pygame.image.load("image/lostHP.png")
+"""Завантаження image текстур"""
+WALL_TEXTURE = pygame.transform.scale(pygame.image.load("image/texture/Texture.jpg"),(TILE_SIZE, TILE_SIZE))
+COIN_TEXTURE = pygame.image.load("image/texture/coin.png")
+HUNTER_TEXTURE = pygame.image.load("image/texture/soldier2.png")
+EXIT_TEXTURE_RIGHT = pygame.image.load("image/texture/door_right.png")
+EXIT_TEXTURE_LEFT = pygame.image.load("image/texture/door_left.png")
+MINE_TEXTURE = pygame.image.load("image/texture/mine_1.png")
+CHEST_SMALL_TEXTURE = pygame.image.load("image/texture/chest.png")
+CHEST_GREAT_TEXTURE = pygame.image.load("image/texture/chest_diamond.png")
 
 """Завантаження image smoke"""
 SMOKE_FRAMES = [
-    pygame.image.load("smoke/smoke1.png"),
-    pygame.image.load("smoke/smoke2.png"),
-    pygame.image.load("smoke/smoke3.png"),
+    pygame.image.load("image/smoke/smoke1.png"),
+    pygame.image.load("image/smoke/smoke2.png"),
+    pygame.image.load("image/smoke/smoke3.png"),
 ]
 
 """Завантаження image pacman"""
 PACMAN_RIGHT = [
-    pygame.image.load("pacman/pacman_right/pacman_right1.png"),
-    pygame.image.load("pacman/pacman_right/pacman_right2.png"),
-    pygame.image.load("pacman/pacman_right/pacman_right3.png"),
+    pygame.image.load("image/pacman/pacman_right/pacman_right1.png"),
+    pygame.image.load("image/pacman/pacman_right/pacman_right2.png"),
+    pygame.image.load("image/pacman/pacman_right/pacman_right3.png"),
 ]
 PACMAN_LEFT = [
-    pygame.image.load("pacman/pacman_left/pacman_left1.png"),
-    pygame.image.load("pacman/pacman_left/pacman_left2.png"),
-    pygame.image.load("pacman/pacman_left/pacman_left3.png"),
+    pygame.image.load("image/pacman/pacman_left/pacman_left1.png"),
+    pygame.image.load("image/pacman/pacman_left/pacman_left2.png"),
+    pygame.image.load("image/pacman/pacman_left/pacman_left3.png"),
 ]
 PACMAN_UP = [
-    pygame.image.load("pacman/pacman_up/pacman_up1.png"),
-    pygame.image.load("pacman/pacman_up/pacman_up2.png"),
-    pygame.image.load("pacman/pacman_up/pacman_up3.png"),
+    pygame.image.load("image/pacman/pacman_up/pacman_up1.png"),
+    pygame.image.load("image/pacman/pacman_up/pacman_up2.png"),
+    pygame.image.load("image/pacman/pacman_up/pacman_up3.png"),
 ]
 PACMAN_DOWN = [
-    pygame.image.load("pacman/pacman_down/pacman_down1.png"),
-    pygame.image.load("pacman/pacman_down/pacman_down2.png"),
-    pygame.image.load("pacman/pacman_down/pacman_down3.png"),
+    pygame.image.load("image/pacman/pacman_down/pacman_down1.png"),
+    pygame.image.load("image/pacman/pacman_down/pacman_down2.png"),
+    pygame.image.load("image/pacman/pacman_down/pacman_down3.png"),
 ]
-PACMAN_IDLE = [pygame.image.load("pacman/pacman_idle.png")]
+PACMAN_IDLE = [pygame.image.load("image/pacman/pacman_idle.png")]
 
 PACMAN_ANIMATION = {
     "right": PACMAN_RIGHT,
