@@ -13,7 +13,7 @@ COLOR_BUTTON = (80, 80, 80)
 COLOR_BUTTON_HOVER = (110, 110, 110)
 
 ANIMATION_SPEED = 0.15
-PLAYER_SPEED = 3
+PLAYER_SPEED = 2.2
 MONSTER_SPEED = 2
 HUNTER_SPEED = 2
 HUNTER_VISION_RANGE = 500
@@ -29,10 +29,10 @@ WALL_LAYER = 1
 PLAYER_LAYER = 2
 
 FOG_COLOR = (0, 0, 0)
-FOG_ALPHA = 0#252
+FOG_ALPHA = 252
 VISION_RADIUS_INNER = 50
 VISION_RADIUS_OUTER = 140
-FOG_ALPHA_GRADIENT = 0#250
+FOG_ALPHA_GRADIENT = 245
 
 
 CONTROL_ICON_SIZE = (32, 32)
@@ -82,8 +82,22 @@ CHEST_IMAGE_SILE = (200, 170)
 CHEST_BUTTON_SIZE = (120, 35)
 CHEST_BUTTON_SIZE_CONTINUE = (130, 35)
 
-YELLOW_CHEST_SPAWN_CHANCE = 0.03
-BLUE_CHEST_SPAWN_CHANCE = 0.008
+MAX_LEVEL = 10
+LEVEL_TEXT_SIZE = 40
+
+"""Налаштування рівнів"""
+LEVEL_CONFIGS = [
+    {"vision": 3000, "patrol": 2, "hunters": 0, "hunters_vis": 100, "hunter_dmg": 10, "speed": 2, "prices": (5,5,7), "chest_y": (1, 0.7), "chest_b": (0.1, 0.03), "timer": None},
+    {"vision": 3000, "patrol": 2, "hunters": 1, "hunters_vis": 100, "hunter_dmg": 10, "speed": 2, "prices": (5,5,7), "chest_y": (6, 4), "chest_b": (0.7, 0.25), "timer": None},
+    {"vision": 170, "patrol": 3, "hunters": 1, "hunters_vis": 150, "hunter_dmg": 10, "speed": 2, "prices": (5,5,7), "chest_y": (10, 7), "chest_b": (2, 1), "timer": None},
+    {"vision": 170, "patrol": 2, "hunters": 2, "hunters_vis": 175, "hunter_dmg": 10, "speed": 2, "prices": (5,5,7), "chest_y": (15, 10), "chest_b": (5, 2), "timer": None},
+    {"vision": 150, "patrol": 2, "hunters": 3, "hunters_vis": 230, "hunter_dmg": 10, "speed": 2, "prices": (5,5,7), "chest_y": (20, 13), "chest_b": (7, 4), "timer": None},
+    {"vision": 120, "patrol": 3, "hunters": 3, "hunters_vis": 300, "hunter_dmg": 10, "speed": 2, "prices": (6,6,8), "chest_y": (23, 18), "chest_b": (12, 6), "timer": None},
+    {"vision": 90, "patrol": 4, "hunters": 3, "hunters_vis": 380, "hunter_dmg": 15, "speed": 2, "pries": (6,6,8), "chest_y": (30, 23), "chest_b": (18, 10), "timer": None},
+    {"vision": 70, "patrol": 2, "hunters": 5, "hunters_vis": 450, "hunter_dmg": 15, "speed": 2, "prices": (6,7,10), "chest_y": (40, 30), "chest_b": (35, 18), "timer": None},
+    {"vision": 50, "patrol": 4, "hunters": 7, "hunters_vis": 3000, "hunter_dmg": 15, "speed": 3, "prices": (6,7,10), "chest_y": (70, 60), "chest_b": (50, 50), "timer": 80},
+]
+
 
 BUTTON_SHOP_BUY_NORMAL = pygame.image.load("image/button/shop_normal.png")
 BUTTON_SHOP_BUY_HOVER = pygame.image.load("image/button/shop_hover.png")
@@ -106,6 +120,7 @@ IMAGE_CHEST_GREAT = pygame.image.load("image/chest_big.png")
 
 """icon image"""
 ICON_SHOP = pygame.image.load("image/icon/icon_shop.png")
+ICON_COIN = pygame.image.load("image/icon/money.png")
 ICON_ROCKET = pygame.image.load("image/icon/rocket.png")
 ICON_SMOKE = pygame.image.load("image/icon/smoke_grenade.png")
 ICON_MINE = pygame.image.load("image/icon/mine.png")

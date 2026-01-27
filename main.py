@@ -23,14 +23,15 @@ class Game:
         pygame.display.set_caption("game")
         self.dt = 0
 
-        self.font = pygame.font.Font(None, HUD_FONT_SIZE)
+        self.font = pygame.font.Font(None, LEVEL_TEXT_SIZE)
+        self.font_level = pygame.font.Font(None, LEVEL_TEXT_SIZE)
 
 
         self.game_state = "playing"
         self.is_paused = False
         self.fog_surface = pygame.Surface(self.screen.get_size(), pygame.SRCALPHA)
-        self.coins_collected = 30
-        self.rockets = 10
+        self.coins_collected = 0
+        self.rockets = 0
         self.smoke_grenades = 0
         self.mines = 0
 
@@ -52,6 +53,7 @@ class Game:
         self.player = None
         self.player_start_pos = None
         self.level = 1
+        self.max_level = MAX_LEVEL
         self.lives = PLAYER_LIVES
         self.shop = Shop(self)
         self.game_over = GameOver(self)
@@ -93,11 +95,31 @@ class Game:
                         dead_ends.append((x, y))
         return dead_ends
 
+    def calculate_chest_count(self, chance_one, chance_more):
+        if random.random() * 100 < chance_one:
+            if random.random() * 100 < chance_more:
+                return random.choice([2,3])
+            else:
+                return 1
+        return 0
+
     def new_level(self):
 
         for sprite in self.all_sprites:
             sprite.kill()
         self.heart_sprites = []
+        if self.level > MAX_LEVEL:
+            self.running = False
+        cfg = LEVEL_CONFIGS[self.level - 1]
+
+        global COINS_FOR_ROCKET, COINS_FOR_SMOKE, COINS_FOR_MINE
+        global VISION_RADIUS_INNER, VISION_RADIUS_OUTER
+        #COINS_FOR_ROCKET, COINS_FOR_SMOKE, COINS_FOR_MINE = cfg["prices"]
+
+        if cfg["vision"]:
+            VISION_RADIUS_INNER = cfg["vision"]
+            VISION_RADIUS_OUTER = VISION_RADIUS_INNER + 90
+
         self.maze_data = maze_generation(MAZE_WIDTH, MAZE_HEIGHT)
     #Життя
         for i, heart in enumerate(self.heart_sprites):
@@ -108,7 +130,7 @@ class Game:
 
         if not self.heart_sprites and self.lives > 0:
             for i in range(self.lives):
-                x_pos = 0 + ((36 + HEART_PADDING) * (self.lives - i))
+                x_pos = 60 + ((36 + HEART_PADDING) * (self.lives - i))
                 y_pos = HEART_PADDING
                 heart = Heart(self, x_pos, y_pos)
                 self.heart_sprites.append(heart)
@@ -168,15 +190,22 @@ class Game:
         dead_ends = self.find_dead_emds()
         spawnable_dead_ends = [pos for pos in dead_ends if pos in empty_tiles]
 
-        yellow_chance = YELLOW_CHEST_SPAWN_CHANCE * self.level
-        blue_chance = BLUE_CHEST_SPAWN_CHANCE * self.level
+        yellow_chance = self.calculate_chest_count(*cfg['chest_y'])
+        blue_chance = self.calculate_chest_count(*cfg['chest_b'])
 
-        for pos in spawnable_dead_ends:
-            empty_tiles.remove(pos)
-            if random.random() < blue_chance:
-                Chest(self, pos[0], pos[1], "blue")
-            elif random.random() < yellow_chance:
-                Chest(self, pos[0], pos[1], "yellow")
+        for _ in range(yellow_chance):
+            if spawnable_dead_ends:
+                pos = random.choice(spawnable_dead_ends)
+                spawnable_dead_ends.remove(pos)
+                empty_tiles.remove(pos)
+                Chest(self, pos[0], pos[1], 'yellow')
+
+        for _ in range(blue_chance):
+            if spawnable_dead_ends:
+                pos = random.choice(spawnable_dead_ends)
+                spawnable_dead_ends.remove(pos)
+                empty_tiles.remove(pos)
+                Chest(self, pos[0], pos[1], 'blue')
 
 
     #Монстри
@@ -184,21 +213,25 @@ class Game:
         if self.player_start_pos:
             for pos in empty_tiles:
                 distance = abs(pos[0] - self.player_start_pos[0]) + abs(pos[1] - self.player_start_pos[1])
-
                 if distance > 5:
                     safe_spawn_points.append(pos)
 
-        num_monsters = 5
-        for i in range(num_monsters):
+        if len(safe_spawn_points) < (cfg["patrol"] + cfg["hunters"]):
+            for pos in empty_tiles:
+                if pos not in safe_spawn_points:
+                    safe_spawn_points.append(pos)
+
+        for _ in range(cfg["patrol"]):
             if safe_spawn_points:
                 pos = random.choice(safe_spawn_points)
                 safe_spawn_points.remove(pos)
-                if i < 2:
-                    Hunter(self, pos[0], pos[1])
-                else:
-                    Patrol(self, pos[0], pos[1])
-            else:
-                break
+                Patrol(self, pos[0], pos[1], speed=cfg["speed"], damage=PATROL_DAMAGE)
+
+        for _ in range(cfg["hunters"]):
+            if safe_spawn_points:
+                pos = random.choice(safe_spawn_points)
+                safe_spawn_points.remove(pos)
+                Hunter(self, pos[0], pos[1], speed=cfg["speed"], damage=cfg["hunter_dmg"], vision_range=cfg["hunters_vis"])
 
         num_coins = 7
         for _ in range(num_coins):
@@ -296,6 +329,10 @@ class Game:
             self.all_sprites.update()
 
             if  self.player:
+                exit_hits = pygame.sprite.spritecollide(self.player, self.exit_group, False)
+                if exit_hits:
+                    self.level += 1
+                    self.new_level()
                 self.check_coin_hits()
                 self.check_exit_hits()
                 self.check_monster_hits()
@@ -428,12 +465,13 @@ class Game:
 
         self.ui_sprites.draw(self.screen)
         coin_text = f" {self.coins_collected}"
-        self.draw_text(coin_text, 1230, 12, WHITE)
+        self.draw_text(coin_text, 1160, 12, WHITE)
         rocket_text = f" {self.rockets}"
-        self.draw_text(rocket_text, 1325, 10, WHITE)
+        self.draw_text(rocket_text, 1240, 10, WHITE)
         smoke_text = f"{self.smoke_grenades}"
-        self.draw_text(smoke_text, 1400, 10, WHITE)
-        self.draw_text(f" {self.mines}", 10, 100, WHITE)
+        self.draw_text(smoke_text, 1330, 10, WHITE)
+        self.draw_text(f" {self.mines}", 1390, 10, WHITE)
+        self.draw_text(f"LVL {self.level}", 10, 13, WHITE)
 
         #if self.player:
             #self.draw_text(f"HP :{self.player.health}", 10, 70, WHITE)
@@ -453,9 +491,11 @@ class Game:
             s = pygame.Surface(self.screen.get_size(), pygame.SRCALPHA)
             s.fill((0, 0, 0, 150))
             self.screen.blit(s,(0, 0))
-        self.screen.blit(pygame.image.load("image/icon/rocket.png"), (1300, 8))
-        self.screen.blit(pygame.image.load("image/texture/mine_1.png"), (1200, 8))
-        self.screen.blit(pygame.image.load("image/icon/smoke_grenade.png"), (1400, 8))
+        #self.screen.blit(pygame.image.load("image/icon/rocket.png"), (1300, 8))
+        self.screen.blit(ICON_COIN, (1130, 8))
+        self.screen.blit(ICON_ROCKET, (1220, 8))
+        self.screen.blit(ICON_SMOKE, (1300, 8))
+        self.screen.blit(ICON_MINE, (1360, 8))
         #self.screen.blit(pygame.image.load("image/r1.png"), (660, 300))
         #self.screen.blit(pygame.image.load("image/t1.png"), (760, 500))
         #self.screen.blit(pygame.image.load("image/t1.png"), (630, 500))
@@ -464,7 +504,7 @@ class Game:
 
 
     def draw_text(self, text, x, y, color):
-        text_surface = self.font.render(text, True, color)
+        text_surface = self.font.render(text, True, WHITE)
         self.screen.blit(text_surface, (x, y))
 
     def quit_game(self):

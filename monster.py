@@ -5,10 +5,12 @@ import pygame.draw
 from constants import *
 
 class BaseMonster(pygame.sprite.Sprite):
-    def __init__(self, game, x, y):
+    def __init__(self, game, x, y, speed=MONSTER_SPEED, damage=0):
         self.groups = game.all_sprites, game.monsters
         super().__init__(self.groups)
         self.game = game
+        self.speed = speed
+        self.damage = damage
         self.rect = self.image.get_rect()
         hitbox_size = int(TILE_SIZE * 0.75)
         self.hit_rect = pygame.Rect(0, 0, hitbox_size, hitbox_size)
@@ -49,13 +51,13 @@ class BaseMonster(pygame.sprite.Sprite):
         self.rect.center = self.hit_rect.center
 
 class Patrol(BaseMonster):
-    def __init__(self, game, x, y):
+    def __init__(self, game, x, y, speed=MONSTER_SPEED, damage=PATROL_DAMAGE):
         self.animation_frames = PACMAN_ANIMATION
         self.current_frame = 0
         self.last_update = 0
         self.direction = "idle"
         self.image = self.animation_frames[self.direction][self.current_frame]
-        super().__init__(game, x, y)
+        super().__init__(game, x, y, speed, damage)
         self.type = "patrol"
         self.damage = PATROL_DAMAGE
         maze = self.game.maze_data
@@ -126,9 +128,12 @@ class Patrol(BaseMonster):
         self.animate()
 
 class Hunter(BaseMonster):
-    def __init__(self, game, x, y):
+    def __init__(self, game, x, y, speed=HUNTER_SPEED, damage=HUNTER_DAMAGE, vision_range=HUNTER_VISION_RANGE):
         self.image = HUNTER_TEXTURE
-        super().__init__(game, x, y)
+        super().__init__(game, x, y, speed, damage)
+        self.patrol_speed = speed
+        self.chase_speed = speed
+        self.vision_range = vision_range
         self.damage = HUNTER_DAMAGE
         self.type = "hunter"
         self.patrol_speed = MONSTER_SPEED
@@ -168,7 +173,11 @@ class Hunter(BaseMonster):
         is_player_visible = False
         if self.game.player:
             dist = self.pos.distance_to(self.game.player.pos)
-            if dist < HUNTER_VISION_RANGE and self.can_see_player():
+            in_range = True
+            if dist > self.vision_range:
+                in_range = False
+
+            if in_range and self.can_see_player():
                 is_player_visible = True
         if is_player_visible:
             self.state = "chasing"
